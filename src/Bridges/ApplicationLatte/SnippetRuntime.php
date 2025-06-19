@@ -117,6 +117,8 @@ final class SnippetRuntime
 
 		$this->control->snippetMode = true;
 		$this->renderChildren();
+
+		$this->renderingSnippets = false;
 		return true;
 	}
 
