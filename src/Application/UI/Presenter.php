@@ -9,11 +9,13 @@ declare(strict_types=1);
 
 namespace Nette\Application\UI;
 
+use Fregis\UI\INoChildrenState;
 use Nette;
 use Nette\Application;
 use Nette\Application\Helpers;
 use Nette\Application\LinkGenerator;
 use Nette\Application\Responses;
+use Nette\ComponentModel\IComponent;
 use Nette\Http;
 use Nette\Utils\Arrays;
 use function array_slice, count, dirname, func_get_args, func_num_args, implode, in_array, is_array, is_dir, is_file, is_string, ltrim, preg_match, preg_replace, str_starts_with, strcasecmp, strlen, strncmp, strpos, strrpos, strtr, substr, substr_count, trigger_error, ucfirst;
@@ -934,7 +936,7 @@ abstract class Presenter extends Control implements Application\IPresenter
 
 			$persistents = $this->getReflection()->getPersistentComponents();
 
-			foreach ($this->getComponentTree() as $component) {
+			foreach ($this->getComponentStateTree() as $component) {
 				if ($component->getParent() === $this) {
 					// counts on child-first search
 					$since = $persistents[$component->getName()]['since'] ?? false; // false = nonpersistent
@@ -978,6 +980,22 @@ abstract class Presenter extends Control implements Application\IPresenter
 		}
 
 		return $state;
+	}
+
+	/**
+	 * Retrieves the entire hierarchy of components, including all nested child components (depth-first).
+	 * @return list<IComponent>
+	 */
+	final public function getComponentStateTree(?Nette\ComponentModel\Container $container = null): array
+	{
+		$res = [];
+		foreach (($container ?? $this)->components as $component) {
+			$res[] = $component;
+			if ($component instanceof Nette\ComponentModel\Container && !$component instanceof INoChildrenState) {
+				$res = array_merge($res, $this->getComponentStateTree($component));
+			}
+		}
+		return $res;
 	}
 
 
